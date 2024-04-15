@@ -2,11 +2,13 @@
 import os
 import shutil
 from pathlib import Path
+from data_transformation import add_market_column
 
 
 # Configure base path to dataset files
 BASE_DIR = Path().parent.absolute()
 DATA_SETS_PATH = BASE_DIR / 'datasets'
+
 
 
 def load_file_paths():
@@ -73,9 +75,11 @@ def csv_file_loader(path, schema, dynamic_schema, spark_session):
 def load_data_from_file(filename, schema, dynamic_schema, spark_session):
         file_type = filename.split('.')[1]
         if file_type == 'json':
-           return json_file_loader(filename, schema, dynamic_schema, spark_session)
+           df = json_file_loader(filename, schema, dynamic_schema, spark_session)
+           return add_market_column(df, 'market', filename)
         elif file_type == 'csv':
-          return csv_file_loader(filename, schema, dynamic_schema, spark_session)
+          df = csv_file_loader(filename, schema, dynamic_schema, spark_session)
+          return add_market_column(df, 'market', filename)
         else:
           return None
       
@@ -84,6 +88,7 @@ def load_data_from_file(filename, schema, dynamic_schema, spark_session):
 ## Utils
 
 def move_files(file_path):
+    """Moves a file from the original destination to a different"""
     source_path = DATA_SETS_PATH / file_path
     destination_path = DATA_SETS_PATH / 'ingested_data' / file_path
     # Move the file

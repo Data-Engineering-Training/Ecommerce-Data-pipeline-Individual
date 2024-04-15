@@ -6,7 +6,7 @@ from data_ingestion import ingest_to_warehouse
 
 def connect_tospark():
     try:
-      return SparkSession.builder.config("spark.jars", "mysql-connector-j-8.3.0.jar") \
+      return SparkSession.builder   \
                             .master("local") \
                             .appName("DataPipeline") \
                             .getOrCreate()
@@ -41,7 +41,7 @@ def run_pipeline():
     if spark:
             customer_files, delivery_files, orders_files =  load_file_paths()
     
-            # Clean strucher issues in Market 1 Delivery
+            # Clean structure issues in Market 1 Delivery
             for path in delivery_files:
                 file_path = path.split('.')[0]
                 cleaned_path = file_path + '_cleaned.' + str(path.split('.')[1])
