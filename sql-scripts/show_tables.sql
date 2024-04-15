@@ -1,0 +1,4 @@
+CREATE DATABASE IF NOT EXISTS Ransbet;
+USE  Ransbet;
+
+SHOW Tables;
