@@ -1,3 +1,4 @@
+from pyspark.sql import functions as F
 from pathlib import Path
 import csv
 
@@ -76,3 +77,15 @@ def clean_extra_commas(file_path, clean_file_path):
             # print(corrected_text2)
             # print('"""""""""""""""""""""""""""""""""""""""""""""""')
            
+def clean_column_names(df):
+  """
+  This function cleans column names in a Spark DataFrame by replacing spaces with underscores.
+
+  Args:
+      df: The Spark DataFrame to process.
+
+  Returns:
+      A new Spark DataFrame with cleaned column names.
+  """
+  cleaned_cols = [F.col(col).alias(col.lower().replace(' ', '_')) for col in df.columns]
+  return df.select(*cleaned_cols)

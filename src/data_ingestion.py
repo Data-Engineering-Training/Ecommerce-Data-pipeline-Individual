@@ -1,16 +1,11 @@
 import config
+from data_loaders import write_file_modification
 
-def ingest_to_warehouse(df, table_name):
+def ingest_to_warehouse(df, table_name, file_path, last_index):
     try:
-        # Write DataFrame to MySQL database
-        jdbc_url = f"jdbc:mysql://{config.DB_HOST}:3306/{config.DB_NAME}"
-        mysql_properties = {
-            "user": config.DB_USER,
-            "password": config.DB_PASSWORD,
-            "driver": "com.mysql.jdbc.Driver"
-        }
-
-        df.write.jdbc(url=jdbc_url, table=table_name, mode="append", properties=mysql_properties)
+        df.write.jdbc(url=config.jdbc_url, table=table_name, mode="append", properties=config.mysql_properties)
+        write_file_modification(file_path, last_index)
+        
         return {"status": True, "error": None}
     
     except Exception as e:

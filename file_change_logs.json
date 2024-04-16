@@ -1,0 +1,32 @@
+[
+  {
+    "last_modified": "2024-04-09 13:31:59",
+    "last_data_processed": 4177,
+    "file_name": "Market 1 Customers.json"
+  },
+  {
+    "last_modified": "2024-04-08 12:07:29",
+    "last_data_processed": 1095,
+    "file_name": "Market 2 Customers.json"
+  },
+  {
+    "last_modified": "2024-04-08 12:07:29",
+    "last_data_processed": 12242,
+    "file_name": "Market 1 Orders.csv"
+  },
+  {
+    "last_modified": "2024-04-08 12:07:29",
+    "last_data_processed": 1429,
+    "file_name": "Market 2 Orders.csv"
+  },
+  {
+    "last_modified": "2024-04-16 17:05:57",
+    "last_data_processed": 44983,
+    "file_name": "Market 1 Deliveries_cleaned.csv"
+  },
+  {
+    "last_modified": "2024-04-08 12:07:29",
+    "last_data_processed": 8019,
+    "file_name": "Market 2 Deliveries.csv"
+  }
+]

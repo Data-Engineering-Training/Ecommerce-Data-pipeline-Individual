@@ -1,15 +1,17 @@
 import os
-import time
+import hashlib
 import threading
+import time
 from pathlib import Path
 from collections import defaultdict
 from data_ingestion_pipeline import run_pipeline
+
+
 
 # Configure base path to dataset files
 BASE_DIR = Path().parent.absolute()
 DATA_SETS_PATH = BASE_DIR / 'datasets'
 
- 
 
 def has_files(directory):
     """
@@ -28,84 +30,77 @@ def has_files(directory):
     return False
 
 
-def watch_directory(directory, other_script):
-        """
-        This function checks a directory for changes (new or moved files).
 
-        Args:
-            directory: The path to the directory to check.
+def check_modified_files(directory):
+  """
+  This function checks a directory for modified files.
 
-        Returns:
-            A list of paths to newly added or moved files.
-        """
-        # Initialize a dictionary to store file presence (avoiding timestamps)
-        prev_files = set()
+  Args:
+      directory: The path to the directory to check.
 
-        # Check if directory exists
-        if not os.path.isdir(directory):
-            print(f"Error: Directory '{directory}' does not exist.")
-            return []
+  Returns:
+      A list of paths to modified files.
+  """
+  # Initialize a dictionary to store file hashes
+  file_hashes = defaultdict(str)
 
-        # Get initial listing of files
-        prev_files = set(os.listdir(directory))
+  # Check if directory exists
+  if not os.path.isdir(directory):
+    print(f"Error: Directory '{directory}' does not exist.")
+    return []
 
-        # Loop for continuous checking (can be modified for single run)
-        while True:
-            new_files = []
-            current_files = set(os.listdir(directory))
+  # Get initial listing of files and their hashes
+  for filename in os.listdir(directory):
+    filepath = os.path.join(directory, filename)
+    with open(filepath, 'rb') as f:
+      file_hashes[filepath] = hashlib.md5(f.read()).hexdigest()
 
-            # Identify changes (added or removed files)
-            added_files = current_files - prev_files
-            removed_files = prev_files - current_files
+  # Loop for continuous checking (can be modified for single run)
+  while True:
+    modified_files = []
+    for filename in os.listdir(directory):
+      filepath = os.path.join(directory, filename)
 
-            # Since moved files might be removed then added, consider both changes
-            new_files.extend(added_files)
+      # Check if file exists in previous check
+      if filepath not in file_hashes:
+        # New file, consider it modified for simplicity
+        modified_files.append(filepath)
+        continue
 
-            # Report changes (be aware removed files might reappear due to moves)
-            if new_files or removed_files:
-                print(f"Directory changes:")
-                
-            if new_files:
-                print(f"  New files:")
-                for file in new_files:
-                    print(f"    {file}")
-                    
-                # Run the pipeline when new files are added to the directory
-                run_pipeline()
-                
-            if removed_files:
-                print(f"  Removed files:")
-                for file in removed_files:
-                    print(f"    {file}")
-            
-            # Optionally, add logic to handle new files here
+      # Open file and calculate new hash
+      with open(filepath, 'rb') as f:
+        new_hash = hashlib.md5(f.read()).hexdigest()
 
-            # Update previous files for next iteration
-            prev_files = current_files
+      # Check if hash has changed (indicating modification)
+      if file_hashes[filepath] != new_hash:
+        modified_files.append(filepath)
+        file_hashes[filepath] = new_hash  # Update hash for future checks
 
-            # Sleep for a while before checking again
-            # Modify this based on your desired checking frequency
-            time.sleep(10)
+    # Report modified files (if any)
+    if modified_files:
+      run_pipeline()
+      for file in modified_files:
+        print(file)
+    # Optionally, add logic to handle modified files here
+
+    # Sleep for a while before checking again
+    # Modify this based on your desired checking frequency
+    time.sleep(30)
 
 
 # Example usage:
 if __name__ == "__main__":
-    directory = DATA_SETS_PATH
-    other_script = BASE_DIR / 'src' / 'data_ingestion_pipeline.py'
+    
+    directory_to_watch = DATA_SETS_PATH
 
     # Check for initial files and run the script if necessary
-    if has_files(directory):
-        print(f"Directory '{directory}' is empty. Running script '{other_script}'...")
-        #os.system(f"python {other_script}")  # Execute the other script using python
+    if has_files(directory_to_watch):
         # Run the data pipeline
         run_pipeline()
   
 
     # Start the monitoring in a separate thread for better responsiveness
-    watch_thread = threading.Thread(target=watch_directory, args=(directory, other_script))
+    watch_thread = threading.Thread(target=check_modified_files, args=[directory_to_watch])
     watch_thread.start()
 
-    print(f"Monitoring directory '{directory}' for changes...")
-
-
-
+    print(f"Monitoring directory '{directory_to_watch}' for changes...")
