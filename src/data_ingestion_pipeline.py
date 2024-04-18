@@ -1,53 +1,76 @@
+# Import necessary libraries and modules
 from pyspark.sql import SparkSession
-from data_loaders import load_file_paths, load_data_from_file, move_files, load_log_file
-from data_schema import customers_schema, deliveries_schema, orders_schema
-from data_cleaning import clean_extra_commas
-from data_transformation import data_transformation_pipeline
-from data_cleaning import clean_column_names
-from data_ingestion import ingest_to_warehouse
-
+from utils.data_loaders import load_file_paths, load_data_from_file
+from utils.data_schema import customers_schema, deliveries_schema, orders_schema
+from utils.data_cleaning import clean_extra_commas
+from utils.data_transformation import data_transformation_pipeline
+from utils.data_cleaning import clean_column_names
+from utils.data_ingestion import ingest_to_warehouse
 
 def connect_tospark():
+    """
+    Function to create a SparkSession.
+    Returns:
+        spark: SparkSession object or None if an exception occurs.
+    """
     try:
-      return SparkSession.builder   \
+      spark = SparkSession.builder   \
                             .master("local") \
                             .appName("DataPipeline") \
                             .getOrCreate()
     except:
         return None
+    else:
+        return spark
                             
 
 def stop_spark_session(spark_session):
+    """
+    Function to stop a SparkSession.
+    Args:
+        spark_session: The SparkSession to be stopped.
+    """
     spark_session.stop()
 
 
-def load_and_injest_data(file, schema,  table, spark, use_schema = False, enrich = False):
-        try:
-            
-           # load and filter data
-           df, last_index = load_data_from_file(file, schema, use_schema, spark)
-           
-           # clean common problems
-           df = clean_column_names(df) 
-        
-           # Transform the data
-           df, error = data_transformation_pipeline(spark, df, file, enrich)
+def load_and_injest_data(file, schema, table, spark, use_schema = False, enrich = False, clean_id=False, join_on = 'customers_id'):
+    """
+    Function to load, clean, transform, and ingest data.
+    Args:
+        file (str): The file path of the data file.
+        schema (StructType): The schema of the data.
+        table (str): The table name in the data warehouse.
+        spark (SparkSession): The SparkSession object.
+        use_schema (bool): Whether to use the provided schema when loading data.
+        enrich (bool): Whether to enrich the data during transformation.
+        clean_id (bool): Whether to clean the ID column.
+        join_on (str): The column name to join on.
+    Raises:
+        Exception: If an error occurs during data transformation or ingestion.
+    """
+    try:
+       # load and filter data
+       df, last_index = load_data_from_file(file, schema, use_schema, spark)
+       # clean common problems
+       df = clean_column_names(df, clean_id) 
+       # Transform the data
+       df, error = data_transformation_pipeline(spark, df, file, enrich, join_on)
 
-           if error:
-              raise Exception(error)
-           
-           if df:
-                res = ingest_to_warehouse(df, table, file, last_index)
-                if res['error'] != None:
-                    raise Exception(res['error'])     
-                  
-        except Exception as e:
-              raise Exception(e)
-
+       if error:
+          raise Exception(error)
+       if df:
+            res = ingest_to_warehouse(df, table, file, last_index)
+            if res['error'] != None:
+                raise Exception(res['error'])       
+    except Exception as e:
+          raise Exception(e)
 
 
 def run_pipeline():
-        # start the spark session
+    """
+    Function to run the entire data pipeline.
+    """
+    # start the spark session
     spark = connect_tospark()
     
     if spark:
@@ -101,7 +124,7 @@ def run_pipeline():
             # Injest orders files
             try:
                 for file in delivery_files:
-                     load_and_injest_data(file, deliveries_schema, 'deliveries', spark, True, False)
+                     load_and_injest_data(file, deliveries_schema, 'deliveries', spark, True, False, True, 'order_id')
                 
                 print('===============================================================')
                 print('Deliveries Data Ingestion Completed')
@@ -110,15 +133,9 @@ def run_pipeline():
             except Exception as e:
                 print("Error while ingesting delivery data", e)
                 
-                
-                  
             # Stop Spark Session
             stop_spark_session(spark)
             
             print('===============================================================')
             print('Data Ingestion Completed')
             print('===============================================================')
-
-
-
-
