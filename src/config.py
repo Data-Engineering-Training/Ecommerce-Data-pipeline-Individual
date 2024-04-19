@@ -12,7 +12,7 @@ DB_DIALECT=os.environ.get('DB_DIALECT')
 
 # Database Configurations
 
-jdbc_url = f"jdbc:mysql://{DB_HOST}:3306/{DB_NAME}"
+jdbc_url = f"jdbc:mysql://{DB_HOST}/{DB_NAME}"
 mysql_properties = {
             "user": DB_USER,
             "password": DB_PASSWORD,

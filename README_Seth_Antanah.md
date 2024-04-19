@@ -128,9 +128,16 @@ cd Data-pipeline-Individual
 DB_NAME='Ransbetty'
 DB_USER='root'
 DB_PASSWORD='*****'
-DB_HOST='127.0.0.1'
+DB_HOST='127.0.0.1:3306'
 
 # Local run
 python src/run_data_pipeline.py
 ```
+
+**Run Analysis**
+
+Open `analysis.ipynb` file
+
+Select a `kernel` and click on run all.
+
 
